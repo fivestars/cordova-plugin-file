@@ -19,7 +19,6 @@
 package org.apache.cordova.file;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -121,7 +120,7 @@ public class FileUtils extends CordovaPlugin {
     	return null;
     }
 
-    protected String[] getExtraFileSystemsPreference(Activity activity) {
+    protected String[] getExtraFileSystemsPreference(Context context) {
         String fileSystemsStr = preferences.getString("androidextrafilesystems", "files,files-external,documents,sdcard,cache,cache-external,assets,root");
         return fileSystemsStr.split(",");
     }
@@ -148,8 +147,7 @@ public class FileUtils extends CordovaPlugin {
         }
     }
 
-    protected HashMap<String, String> getAvailableFileSystems(Activity activity) {
-        Context context = activity.getApplicationContext();
+    protected HashMap<String, String> getAvailableFileSystems(Context context) {
         HashMap<String, String> availableFileSystems = new HashMap<String,String>();
 
         availableFileSystems.put("files", context.getFilesDir().getAbsolutePath());
@@ -179,14 +177,14 @@ public class FileUtils extends CordovaPlugin {
     	String tempRoot = null;
     	String persistentRoot = null;
 
-    	Activity activity = cordova.getActivity();
-    	String packageName = activity.getPackageName();
+    	Context context = cordova.getContext();
+    	String packageName = context.getPackageName();
 
         String location = preferences.getString("androidpersistentfilelocation", "internal");
 
-    	tempRoot = activity.getCacheDir().getAbsolutePath();
+    	tempRoot = context.getCacheDir().getAbsolutePath();
     	if ("internal".equalsIgnoreCase(location)) {
-    		persistentRoot = activity.getFilesDir().getAbsolutePath() + "/files/";
+    		persistentRoot = context.getFilesDir().getAbsolutePath() + "/files/";
     		this.configured = true;
     	} else if ("compatibility".equalsIgnoreCase(location)) {
     		/*
@@ -222,7 +220,7 @@ public class FileUtils extends CordovaPlugin {
     		this.registerFilesystem(new ContentFilesystem(webView.getContext(), webView.getResourceApi()));
             this.registerFilesystem(new AssetFilesystem(webView.getContext().getAssets(), webView.getResourceApi()));
 
-            registerExtraFileSystems(getExtraFileSystemsPreference(activity), getAvailableFileSystems(activity));
+            registerExtraFileSystems(getExtraFileSystemsPreference(context), getAvailableFileSystems(context));
 
     		// Initialize static plugin reference for deprecated getEntry method
     		if (filePlugin == null) {
@@ -230,7 +228,7 @@ public class FileUtils extends CordovaPlugin {
     		}
     	} else {
     		LOG.e(LOG_TAG, "File plugin configuration error: Please set AndroidPersistentFileLocation in config.xml to one of \"internal\" (for new applications) or \"compatibility\" (for compatibility with previous versions)");
-    		activity.finish();
+            throw new IllegalArgumentException();
     	}
     }
 
@@ -986,7 +984,7 @@ public class FileUtils extends CordovaPlugin {
     }
 
     private JSONObject requestAllPaths() throws JSONException {
-        Context context = cordova.getActivity();
+        Context context = cordova.getContext();
         JSONObject ret = new JSONObject();
         ret.put("applicationDirectory", "file:///android_asset/");
         ret.put("applicationStorageDirectory", toDirUrl(context.getFilesDir().getParentFile()));
